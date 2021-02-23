@@ -1,1 +1,2 @@
 /apps/wordpress/*
+!/apps/wordpress/README.md
