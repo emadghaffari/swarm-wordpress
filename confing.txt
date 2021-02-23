@@ -1,0 +1,9 @@
+openssl rand -base64 20 | docker secret create root_db_password -
+openssl rand -base64 20 | docker secret create wp_db_password -
+
+
+
+xfxq3781a9i9mbph70tlss11t
+
+
+rha6lzhe1bz98ulxudqd5ujaa
