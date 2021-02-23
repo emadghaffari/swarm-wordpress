@@ -1,0 +1,85 @@
+version: "3.6"
+
+services:
+  db:
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/root_db_password
+      MYSQL_PASSWORD_FILE: /run/secrets/wp_db_password
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    deploy:
+      placement:
+        constraints: [node.role == worker]
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    secrets:
+      - wp_db_password
+      - root_db_password
+    networks:
+      - application
+
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    ports:
+      - "80:80"
+    restart: always
+    volumes:
+      # - wp_data:/var/www/html
+      - ./apps/wordpress:/var/www/html
+      - ./apps/php/php.ini:/usr/local/etc/php/php.ini
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_PASSWORD_FILE: /run/secrets/wp_db_password
+    deploy:
+      placement:
+        constraints: [node.role == worker]
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    secrets:
+      - wp_db_password
+    networks:
+      - application
+
+  # phpmyadmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - 9090:80
+    depends_on:
+      - db
+    environment:
+      - PMA_ARBITRARY=1
+    networks:
+      - application
+
+networks:
+  application:
+
+secrets:
+  wp_db_password:
+    external: true
+  root_db_password:
+    external: true
+
+volumes:
+  db_data:
+  wp_data:
